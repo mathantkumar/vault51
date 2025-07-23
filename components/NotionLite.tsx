@@ -32,6 +32,15 @@ function loadPages(): Page[] { try { const data = localStorage.getItem(STORAGE_K
 function savePages(pages: Page[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(pages)); }
 function loadTheme(): Theme { const name = localStorage.getItem(THEME_KEY); return THEMES.find(t => t.name === name) || THEMES[0]; }
 function saveTheme(theme: Theme) { localStorage.setItem(THEME_KEY, theme.name); }
+// Add highlight colors
+const HIGHLIGHT_COLORS = [
+  { name: 'Yellow', class: 'bg-yellow-200', code: 'yellow' },
+  { name: 'Pink', class: 'bg-pink-200', code: 'pink' },
+  { name: 'Green', class: 'bg-green-200', code: 'green' },
+  { name: 'Blue', class: 'bg-blue-200', code: 'blue' },
+  { name: 'Purple', class: 'bg-purple-200', code: 'purple' },
+  { name: 'Orange', class: 'bg-orange-200', code: 'orange' },
+];
 function renderMarkdown(md: string): string {
   let html = md
     .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
@@ -39,7 +48,11 @@ function renderMarkdown(md: string): string {
     .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold mt-4 mb-2">$1</h1>')
     .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+    .replace(/==([a-z]+):(.*?)==/gim, (m, color, text) => `<mark class="${HIGHLIGHT_COLORS.find(c => c.code === color)?.class || 'bg-yellow-200'}">${text}</mark>`)
+    .replace(/^\s*1\. (.*$)/gim, '<li class="list-decimal">$1</li>')
     .replace(/^\s*\- (.*$)/gim, '<li>$1</li>');
+  // Wrap consecutive <li> in <ul> or <ol>
+  html = html.replace(/(<li class=\"list-decimal\">[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ol class="list-decimal pl-6 my-2">${match.replace(/<br\/>/g, '')}</ol>`);
   html = html.replace(/(<li>[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ul class="list-disc pl-6 my-2">${match.replace(/<br\/>/g, '')}</ul>`);
   html = html.replace(/\n/g, '<br/>');
   return html;
@@ -87,6 +100,8 @@ const NotionLite: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [theme, setTheme] = useState<Theme>(THEMES[0]);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [contentFocused, setContentFocused] = useState(false);
+  const [showHighlightPalette, setShowHighlightPalette] = useState(false);
 
   useEffect(() => {
     const loaded = loadPages();
@@ -130,21 +145,78 @@ const NotionLite: React.FC = () => {
     setIsEditing(true);
     setTimeout(() => contentRef.current?.focus(), 100);
   }
+  // --- Formatting Toolbar ---
   function insertAtCursor(before: string, after: string = '', field: 'title' | 'content' = 'content') {
-    const ref = field === 'title' ? null : contentRef.current;
-    let value = field === 'title' ? editingTitle : editingContent;
+    if (field === 'title') return; // Only allow formatting in content
+    const ref = contentRef.current;
+    let value = editingContent;
     let selectionStart = ref ? ref.selectionStart : value.length;
     let selectionEnd = ref ? ref.selectionEnd : value.length;
     const selected = value.substring(selectionStart, selectionEnd);
     const newValue = value.substring(0, selectionStart) + before + selected + after + value.substring(selectionEnd);
-    if (field === 'title') setEditingTitle(newValue);
-    else setEditingContent(newValue);
+    setEditingContent(newValue);
+    setPages(pages => pages.map(p => p.id === activeId ? { ...p, content: newValue, title: editingTitle } : p));
     if (ref) {
       setTimeout(() => {
         ref.selectionStart = ref.selectionEnd = selectionStart + before.length + selected.length + after.length;
         ref.focus();
       }, 0);
     }
+  }
+  function insertList(type: 'ul' | 'ol') {
+    const ref = contentRef.current;
+    let value = editingContent;
+    let selectionStart = ref ? ref.selectionStart : value.length;
+    let selectionEnd = ref ? ref.selectionEnd : value.length;
+    const selected = value.substring(selectionStart, selectionEnd) || 'List item';
+    const prefix = type === 'ul' ? '- ' : '1. ';
+    const lines = selected.split('\n').map(line => prefix + line).join('\n');
+    const newValue = value.substring(0, selectionStart) + lines + value.substring(selectionEnd);
+    setEditingContent(newValue);
+    setPages(pages => pages.map(p => p.id === activeId ? { ...p, content: newValue, title: editingTitle } : p));
+    if (ref) {
+      setTimeout(() => {
+        ref.selectionStart = ref.selectionEnd = selectionStart + lines.length;
+        ref.focus();
+      }, 0);
+    }
+  }
+  function insertHighlight(color: string) {
+    // Use custom markdown: ==color:highlighted text==
+    const ref = contentRef.current;
+    let value = editingContent;
+    let selectionStart = ref ? ref.selectionStart : value.length;
+    let selectionEnd = ref ? ref.selectionEnd : value.length;
+    const selected = value.substring(selectionStart, selectionEnd) || 'highlight';
+    const before = `==${color}:`;
+    const after = '==';
+    const newValue = value.substring(0, selectionStart) + before + selected + after + value.substring(selectionEnd);
+    setEditingContent(newValue);
+    setPages(pages => pages.map(p => p.id === activeId ? { ...p, content: newValue, title: editingTitle } : p));
+    setShowHighlightPalette(false);
+    if (ref) {
+      setTimeout(() => {
+        ref.selectionStart = ref.selectionEnd = selectionStart + before.length + selected.length + after.length;
+        ref.focus();
+      }, 0);
+    }
+  }
+  // --- Enhanced Markdown Render ---
+  function renderMarkdown(md: string): string {
+    let html = md
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold mt-4 mb-2">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/==([a-z]+):(.*?)==/gim, (m, color, text) => `<mark class="${HIGHLIGHT_COLORS.find(c => c.code === color)?.class || 'bg-yellow-200'}">${text}</mark>`)
+      .replace(/^\s*1\. (.*$)/gim, '<li class="list-decimal">$1</li>')
+      .replace(/^\s*\- (.*$)/gim, '<li>$1</li>');
+    // Wrap consecutive <li> in <ul> or <ol>
+    html = html.replace(/(<li class=\"list-decimal\">[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ol class="list-decimal pl-6 my-2">${match.replace(/<br\/>/g, '')}</ol>`);
+    html = html.replace(/(<li>[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ul class="list-disc pl-6 my-2">${match.replace(/<br\/>/g, '')}</ul>`);
+    html = html.replace(/\n/g, '<br/>');
+    return html;
   }
   function handleThemeChange(next: Theme) { setTheme(next); }
   function handleSignOut() { window.location.reload(); }
@@ -228,6 +300,23 @@ const NotionLite: React.FC = () => {
                   <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-semibold`} title="H2" onClick={() => insertAtCursor('## ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H2</button>
                   <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-medium`} title="H3" onClick={() => insertAtCursor('### ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H3</button>
                   <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bullet" onClick={() => insertAtCursor('- ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>•</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Numbered List" onClick={() => insertList('ol')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>1.</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bullet List" onClick={() => insertList('ul')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>•</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Highlight" onClick={() => setShowHighlightPalette(true)} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H</button>
+                </div>
+              )}
+              {/* Highlight Palette */}
+              {showHighlightPalette && (
+                <div className="flex flex-wrap gap-2 p-2 rounded-md bg-gray-100 border border-gray-300 mt-2">
+                  {HIGHLIGHT_COLORS.map(color => (
+                    <button
+                      key={color.name}
+                      className={`w-6 h-6 rounded-full border-2 ${color.class} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${color.code}-400`}
+                      onClick={() => insertHighlight(color.code)}
+                      style={{ borderColor: color.name === 'Yellow' ? '#FDFD96' : undefined }}
+                      aria-label={color.name}
+                    />
+                  ))}
                 </div>
               )}
               {/* Content */}
@@ -236,6 +325,8 @@ const NotionLite: React.FC = () => {
                 className="flex-1 w-full p-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-800 bg-white resize-y min-h-[200px] text-base"
                 value={editingContent}
                 onChange={handleContentChange}
+                onFocus={() => setContentFocused(true)}
+                onBlur={() => setContentFocused(false)}
                 placeholder="Write your notes here..."
                 style={{ fontFamily: 'Kumbh Sans, sans-serif' }}
               />
