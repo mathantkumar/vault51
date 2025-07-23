@@ -130,7 +130,7 @@ const AuthUI: React.FC<{ onPhoneSent: (confirmationResult: any) => void }> = ({ 
 
   return (
     <div className="max-w-sm mx-auto mt-12 p-6 bg-white rounded shadow border flex flex-col gap-4">
-      <h2 className="text-lg font-bold mb-2">Sign in to Vault Notes</h2>
+      <h2 className="text-lg font-bold mb-2">Sign in to Vault51</h2>
       {error && <div className="text-red-600 text-sm">{error}</div>}
       {/* Email/Password */}
       <div className="flex flex-col gap-2">
@@ -454,7 +454,7 @@ const App: React.FC = () => {
           />
         </section>
       </main>
-      <footer className="text-center text-xs text-gray-400 py-4">Vault Notes &copy; {new Date().getFullYear()} &mdash; Real-time, collaborative, two-user notes</footer>
+      <footer className="text-center text-xs text-gray-400 py-4">Vault51 &copy; {new Date().getFullYear()} &mdash; Real-time, collaborative, two-user notes</footer>
     </div>
   );
 };
