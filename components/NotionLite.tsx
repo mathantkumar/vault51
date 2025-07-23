@@ -21,10 +21,87 @@ type Theme = {
 };
 
 const THEMES: Theme[] = [
-  { name: 'Blue', accent: 'blue', accentHex: '#3B82F6', accentBg: 'bg-blue-600', accentBorder: 'border-blue-400', accentText: 'text-blue-700', paleBg: 'bg-blue-50' },
-  { name: 'Green', accent: 'green', accentHex: '#10B981', accentBg: 'bg-green-600', accentBorder: 'border-green-400', accentText: 'text-green-700', paleBg: 'bg-green-50' },
-  { name: 'Purple', accent: 'purple', accentHex: '#8B5CF6', accentBg: 'bg-purple-600', accentBorder: 'border-purple-400', accentText: 'text-purple-700', paleBg: 'bg-purple-50' },
-  { name: 'Orange', accent: 'orange', accentHex: '#F59E42', accentBg: 'bg-orange-500', accentBorder: 'border-orange-400', accentText: 'text-orange-700', paleBg: 'bg-orange-50' },
+  {
+    name: 'Pastel Sky',
+    accent: 'blue',
+    accentHex: '#A7C7E7', // Soft sky blue
+    accentBg: 'bg-blue-300',
+    accentBorder: 'border-blue-200',
+    accentText: 'text-blue-700',
+    paleBg: 'bg-blue-50',
+  },
+  {
+    name: 'Pastel Lavender',
+    accent: 'purple',
+    accentHex: '#D6BEF8', // Gentle lavender
+    accentBg: 'bg-purple-300',
+    accentBorder: 'border-purple-200',
+    accentText: 'text-purple-700',
+    paleBg: 'bg-purple-50',
+  },
+  {
+    name: 'Pastel Lilac',
+    accent: 'lilac',
+    accentHex: '#C5A3FF', // Light lilac purple
+    accentBg: 'bg-indigo-300',
+    accentBorder: 'border-indigo-200',
+    accentText: 'text-indigo-700',
+    paleBg: 'bg-indigo-50',
+  },
+  {
+    name: 'Pastel Rose',
+    accent: 'pink',
+    accentHex: '#F8B4CD', // Delicate rose pink
+    accentBg: 'bg-pink-300',
+    accentBorder: 'border-pink-200',
+    accentText: 'text-pink-700',
+    paleBg: 'bg-pink-50',
+  },
+  {
+    name: 'Pastel Coral',
+    accent: 'coral',
+    accentHex: '#FFB6B0', // Soft coral
+    accentBg: 'bg-red-300',
+    accentBorder: 'border-red-200',
+    accentText: 'text-red-700',
+    paleBg: 'bg-red-50',
+  },
+  {
+    name: 'Pastel Peach',
+    accent: 'orange',
+    accentHex: '#FFCBA4', // Soft peach
+    accentBg: 'bg-orange-300',
+    accentBorder: 'border-orange-200',
+    accentText: 'text-orange-700',
+    paleBg: 'bg-orange-50',
+  },
+  {
+    name: 'Pastel Lemon',
+    accent: 'yellow',
+    accentHex: '#FDFD96', // Pale lemon yellow
+    accentBg: 'bg-yellow-200',
+    accentBorder: 'border-yellow-100',
+    accentText: 'text-yellow-700',
+    paleBg: 'bg-yellow-50',
+  },
+  {
+    name: 'Pastel Mint',
+    accent: 'green',
+    accentHex: '#BFFCC6', // Light mint green
+    accentBg: 'bg-green-300',
+    accentBorder: 'border-green-200',
+    accentText: 'text-green-700',
+    paleBg: 'bg-green-50',
+  },
+  {
+    name: 'Pastel Teal',
+    accent: 'teal',
+    accentHex: '#A7DBD8', // Muted teal
+    accentBg: 'bg-teal-300',
+    accentBorder: 'border-teal-200',
+    accentText: 'text-teal-700',
+    paleBg: 'bg-teal-50',
+  },
 ];
 const THEME_KEY = 'notionlite_theme';
 const STORAGE_KEY = 'notionlite_pages';
