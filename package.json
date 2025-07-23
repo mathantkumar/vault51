@@ -1,12 +1,13 @@
 {
-  "name": "vault-notes",
+  "name": "vault51",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "gh-pages -d build" 
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.11",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11"
+    "tailwindcss": "^4.1.11",
+    "gh-pages": "^6.0.0"
   }
 }
