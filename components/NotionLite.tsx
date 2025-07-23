@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// --- Google Fonts: Kumbh Sans ---
+const KUMBH_FONT_URL = 'https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@400;600;700&display=swap';
+
 // --- Types ---
 type Page = {
   id: string;
@@ -9,77 +12,26 @@ type Page = {
 
 type Theme = {
   name: string;
-  accent: string; // Tailwind color e.g. 'blue'
-  accentHex: string; // For pale backgrounds
-  accentBg: string; // Tailwind bg class
-  accentBorder: string; // Tailwind border class
-  accentText: string; // Tailwind text class
-  paleBg: string; // Tailwind bg class for pale area
+  accent: string;
+  accentHex: string;
+  accentBg: string;
+  accentBorder: string;
+  accentText: string;
+  paleBg: string;
 };
 
 const THEMES: Theme[] = [
-  {
-    name: 'Blue',
-    accent: 'blue',
-    accentHex: '#3B82F6',
-    accentBg: 'bg-blue-600',
-    accentBorder: 'border-blue-400',
-    accentText: 'text-blue-700',
-    paleBg: 'bg-blue-50',
-  },
-  {
-    name: 'Green',
-    accent: 'green',
-    accentHex: '#10B981',
-    accentBg: 'bg-green-600',
-    accentBorder: 'border-green-400',
-    accentText: 'text-green-700',
-    paleBg: 'bg-green-50',
-  },
-  {
-    name: 'Purple',
-    accent: 'purple',
-    accentHex: '#8B5CF6',
-    accentBg: 'bg-purple-600',
-    accentBorder: 'border-purple-400',
-    accentText: 'text-purple-700',
-    paleBg: 'bg-purple-50',
-  },
-  {
-    name: 'Orange',
-    accent: 'orange',
-    accentHex: '#F59E42',
-    accentBg: 'bg-orange-500',
-    accentBorder: 'border-orange-400',
-    accentText: 'text-orange-700',
-    paleBg: 'bg-orange-50',
-  },
+  { name: 'Blue', accent: 'blue', accentHex: '#3B82F6', accentBg: 'bg-blue-600', accentBorder: 'border-blue-400', accentText: 'text-blue-700', paleBg: 'bg-blue-50' },
+  { name: 'Green', accent: 'green', accentHex: '#10B981', accentBg: 'bg-green-600', accentBorder: 'border-green-400', accentText: 'text-green-700', paleBg: 'bg-green-50' },
+  { name: 'Purple', accent: 'purple', accentHex: '#8B5CF6', accentBg: 'bg-purple-600', accentBorder: 'border-purple-400', accentText: 'text-purple-700', paleBg: 'bg-purple-50' },
+  { name: 'Orange', accent: 'orange', accentHex: '#F59E42', accentBg: 'bg-orange-500', accentBorder: 'border-orange-400', accentText: 'text-orange-700', paleBg: 'bg-orange-50' },
 ];
-
 const THEME_KEY = 'notionlite_theme';
-
-// --- Local Storage Helpers ---
 const STORAGE_KEY = 'notionlite_pages';
-function loadPages(): Page[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-function savePages(pages: Page[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-}
-function loadTheme(): Theme {
-  const name = localStorage.getItem(THEME_KEY);
-  return THEMES.find(t => t.name === name) || THEMES[0];
-}
-function saveTheme(theme: Theme) {
-  localStorage.setItem(THEME_KEY, theme.name);
-}
-
-// --- Markdown to HTML (very basic) ---
+function loadPages(): Page[] { try { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : []; } catch { return []; } }
+function savePages(pages: Page[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(pages)); }
+function loadTheme(): Theme { const name = localStorage.getItem(THEME_KEY); return THEMES.find(t => t.name === name) || THEMES[0]; }
+function saveTheme(theme: Theme) { localStorage.setItem(THEME_KEY, theme.name); }
 function renderMarkdown(md: string): string {
   let html = md
     .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
@@ -88,11 +40,43 @@ function renderMarkdown(md: string): string {
     .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/gim, '<em>$1</em>')
     .replace(/^\s*\- (.*$)/gim, '<li>$1</li>');
-  // Wrap consecutive <li> in <ul>
   html = html.replace(/(<li>[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ul class="list-disc pl-6 my-2">${match.replace(/<br\/>/g, '')}</ul>`);
   html = html.replace(/\n/g, '<br/>');
   return html;
 }
+
+// --- Modular Card for Page List ---
+const PageCard: React.FC<{
+  page: Page;
+  selected: boolean;
+  accentBorder: string;
+  accentText: string;
+  paleBg: string;
+  onClick: () => void;
+  onDelete: () => void;
+}> = ({ page, selected, accentBorder, accentText, paleBg, onClick, onDelete }) => (
+  <div
+    className={`rounded-lg shadow-sm mb-2 transition cursor-pointer border bg-white flex items-center group ${selected ? `${accentBorder} ${paleBg}` : 'border-gray-200 hover:bg-gray-50'}`}
+    style={{ fontFamily: 'Kumbh Sans, sans-serif' }}
+    onClick={onClick}
+  >
+    <button
+      className={`flex-1 text-left px-4 py-3 font-semibold truncate ${selected ? accentText : 'text-gray-800'}`}
+      style={{ fontFamily: 'Kumbh Sans, sans-serif', background: 'none', border: 'none' }}
+      tabIndex={-1}
+    >
+      {page.title || <span className="italic text-gray-400">Untitled</span>}
+    </button>
+    <button
+      className="ml-2 text-xs text-red-500 hover:text-red-700 px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity"
+      onClick={e => { e.stopPropagation(); onDelete(); }}
+      title="Delete page"
+      style={{ fontFamily: 'Kumbh Sans, sans-serif' }}
+    >
+      &times;
+    </button>
+  </div>
+);
 
 // --- Main Component ---
 const NotionLite: React.FC = () => {
@@ -104,23 +88,14 @@ const NotionLite: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(THEMES[0]);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const loaded = loadPages();
     setPages(loaded);
     if (loaded.length > 0) setActiveId(loaded[0].id);
     setTheme(loadTheme());
   }, []);
-
-  // Save to localStorage on change
-  useEffect(() => {
-    savePages(pages);
-  }, [pages]);
-  useEffect(() => {
-    saveTheme(theme);
-  }, [theme]);
-
-  // When switching page, update editing fields
+  useEffect(() => { savePages(pages); }, [pages]);
+  useEffect(() => { saveTheme(theme); }, [theme]);
   useEffect(() => {
     const page = pages.find(p => p.id === activeId);
     setEditingTitle(page?.title || '');
@@ -128,7 +103,6 @@ const NotionLite: React.FC = () => {
     setIsEditing(false);
   }, [activeId, pages]);
 
-  // --- Page Actions ---
   function handleNewPage() {
     const id = Date.now().toString();
     const newPage: Page = { id, title: 'Untitled', content: '' };
@@ -156,8 +130,6 @@ const NotionLite: React.FC = () => {
     setIsEditing(true);
     setTimeout(() => contentRef.current?.focus(), 100);
   }
-
-  // --- Formatting Toolbar ---
   function insertAtCursor(before: string, after: string = '', field: 'title' | 'content' = 'content') {
     const ref = field === 'title' ? null : contentRef.current;
     let value = field === 'title' ? editingTitle : editingContent;
@@ -174,127 +146,108 @@ const NotionLite: React.FC = () => {
       }, 0);
     }
   }
-
-  // --- Theme Switcher ---
-  function handleThemeChange(next: Theme) {
-    setTheme(next);
+  function handleThemeChange(next: Theme) { setTheme(next); }
+  function handleSignOut() { window.location.reload(); }
+  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setEditingContent(e.target.value);
+    setPages(pages => pages.map(p => p.id === activeId ? { ...p, content: e.target.value, title: editingTitle } : p));
   }
 
-  // --- Sign Out (placeholder) ---
-  function handleSignOut() {
-    // If integrated with auth, call signOut here
-    window.location.reload(); // For now, just reload to simulate sign out
-  }
-
-  // --- UI ---
   return (
-    <div className={`min-h-screen flex flex-col md:flex-row font-sans ${theme.paleBg}`} style={{ fontFamily: 'Lexend, sans-serif' }}>
-      {/* Sidebar */}
-      <aside className={`w-full md:w-64 bg-white border-r ${theme.accentBorder} p-4 flex flex-col gap-4 md:min-h-screen`}>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className={`text-lg font-bold ${theme.accentText}`}>Pages</h2>
-          <button className={`${theme.accentBg} text-white font-semibold hover:brightness-90 transition px-3 py-1 rounded`} onClick={handleNewPage}>+ New Page</button>
-        </div>
-        <nav className="flex-1 overflow-y-auto">
-          {pages.length === 0 ? (
-            <div className="text-gray-400 text-sm text-center mt-8">No pages yet.</div>
-          ) : (
-            <ul className="space-y-1">
-              {pages.map(page => (
-                <li key={page.id}>
-                  <button
-                    className={`w-full text-left px-3 py-2 rounded-lg transition font-medium truncate ${activeId === page.id ? `${theme.paleBg} ${theme.accentText}` : 'hover:bg-gray-100 text-gray-800'}`}
-                    onClick={() => setActiveId(page.id)}
-                    style={{ fontFamily: 'Lexend, sans-serif' }}
-                  >
-                    {page.title || <span className="italic text-gray-400">Untitled</span>}
-                  </button>
-                  <button
-                    className="ml-2 text-xs text-red-500 hover:text-red-700"
-                    onClick={() => handleDeletePage(page.id)}
-                    title="Delete page"
-                  >
-                    &times;
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </nav>
-      </aside>
-      {/* Main Content */}
-      <main className="flex-1 p-4 flex flex-col max-w-3xl mx-auto w-full">
-        {/* Top Bar: Theme Switcher & Sign Out */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className={`font-semibold ${theme.accentText}`}>Theme:</span>
-            <div className="flex gap-1">
-              {THEMES.map(t => (
-                <button
-                  key={t.name}
-                  className={`w-6 h-6 rounded-full border-2 ${t.accentBorder} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${t.accent}-400`}
-                  style={{ background: t.accentHex, borderColor: t.name === theme.name ? t.accentHex : undefined, outline: t.name === theme.name ? `2px solid ${t.accentHex}` : undefined }}
-                  aria-label={t.name}
-                  onClick={() => handleThemeChange(t)}
-                />
-              ))}
-            </div>
+    <>
+      <link href={KUMBH_FONT_URL} rel="stylesheet" />
+      <div className={`min-h-screen flex flex-col md:flex-row font-sans ${theme.paleBg}`} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>
+        {/* Sidebar */}
+        <aside className={`w-full md:w-64 bg-white border-r ${theme.accentBorder} flex flex-col gap-2 md:min-h-screen px-0 py-0`}>
+          <div className="flex flex-col items-center py-6 border-b border-gray-100 mb-2">
+            <button className={`${theme.accentBg} text-white font-semibold hover:brightness-90 transition px-4 py-2 rounded-lg w-5/6`} onClick={handleNewPage} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>+ New Page</button>
           </div>
-          <button className={`px-3 py-1 rounded ${theme.accentBg} text-white font-semibold hover:brightness-90 transition`} onClick={handleSignOut}>Sign Out</button>
-        </div>
-        {activeId ? (
-          <div className={`rounded-lg shadow p-6 flex flex-col gap-4 min-h-[60vh] ${theme.paleBg} border ${theme.accentBorder}`}> 
-            {/* Title */}
-            {isEditing ? (
-              <input
-                className="text-2xl font-bold text-gray-900 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 bg-gray-50"
-                value={editingTitle}
-                onChange={e => setEditingTitle(e.target.value)}
-                style={{ fontFamily: 'Lexend, sans-serif' }}
-              />
+          <nav className="flex-1 overflow-y-auto px-2 pb-4">
+            {pages.length === 0 ? (
+              <div className="text-gray-400 text-sm text-center mt-8">No pages yet.</div>
             ) : (
-              <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Lexend, sans-serif' }}>{editingTitle}</h1>
-                <button className={`text-xs ${theme.accentText} hover:underline`} onClick={handleEditPage}>Edit</button>
-              </div>
+              <ul className="space-y-1">
+                {pages.map(page => (
+                  <li key={page.id}>
+                    <PageCard
+                      page={page}
+                      selected={activeId === page.id}
+                      accentBorder={theme.accentBorder}
+                      accentText={theme.accentText}
+                      paleBg={theme.paleBg}
+                      onClick={() => setActiveId(page.id)}
+                      onDelete={() => handleDeletePage(page.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
             )}
-            {/* Toolbar */}
-            {isEditing && (
-              <div className="flex gap-2 mb-2 flex-wrap">
-                <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bold" onClick={() => insertAtCursor('**', '**')}>B</button>
-                <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 italic`} title="Italic" onClick={() => insertAtCursor('*', '*')}>I</button>
-                <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-bold`} title="H1" onClick={() => insertAtCursor('# ', '', 'content')}>H1</button>
-                <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-semibold`} title="H2" onClick={() => insertAtCursor('## ', '', 'content')}>H2</button>
-                <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-medium`} title="H3" onClick={() => insertAtCursor('### ', '', 'content')}>H3</button>
-                <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bullet" onClick={() => insertAtCursor('- ', '', 'content')}>•</button>
-                <button className={`px-2 py-1 rounded ${theme.accentBg} text-white hover:brightness-90`} onClick={handleSavePage}>Save</button>
+          </nav>
+        </aside>
+        {/* Main Content */}
+        <main className="flex-1 p-0 md:p-8 flex flex-col max-w-full w-full">
+          {/* Top Bar: Theme Switcher & Sign Out */}
+          <div className="flex items-center justify-between mb-6 px-6 pt-6">
+            <div className="flex items-center gap-2">
+              <span className={`font-semibold ${theme.accentText}`}>Theme:</span>
+              <div className="flex gap-1">
+                {THEMES.map(t => (
+                  <button
+                    key={t.name}
+                    className={`w-6 h-6 rounded-full border-2 ${t.accentBorder} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${t.accent}-400`}
+                    style={{ background: t.accentHex, borderColor: t.name === theme.name ? t.accentHex : undefined, outline: t.name === theme.name ? `2px solid ${t.accentHex}` : undefined }}
+                    aria-label={t.name}
+                    onClick={() => handleThemeChange(t)}
+                  />
+                ))}
               </div>
-            )}
-            {/* Content */}
-            {isEditing ? (
+            </div>
+            <button className={`px-3 py-1 rounded ${theme.accentBg} text-white font-semibold hover:brightness-90 transition`} onClick={handleSignOut} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>Sign Out</button>
+          </div>
+          {activeId ? (
+            <div className={`flex flex-col gap-4 min-h-[60vh] ${theme.paleBg} border ${theme.accentBorder} rounded-lg mx-6 mb-8 p-6`}>
+              {/* Title */}
+              {isEditing ? (
+                <input
+                  className="text-2xl font-bold text-gray-900 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 bg-gray-50"
+                  value={editingTitle}
+                  onChange={e => setEditingTitle(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { handleSavePage(); } }}
+                  onBlur={handleSavePage}
+                  style={{ fontFamily: 'Kumbh Sans, sans-serif' }}
+                />
+              ) : (
+                <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Kumbh Sans, sans-serif' }} onClick={() => setIsEditing(true)}>{editingTitle}</h1>
+              )}
+              {/* Toolbar */}
+              {isEditing && (
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bold" onClick={() => insertAtCursor('**', '**')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>B</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 italic`} title="Italic" onClick={() => insertAtCursor('*', '*')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>I</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-bold`} title="H1" onClick={() => insertAtCursor('# ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H1</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-semibold`} title="H2" onClick={() => insertAtCursor('## ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H2</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-medium`} title="H3" onClick={() => insertAtCursor('### ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H3</button>
+                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bullet" onClick={() => insertAtCursor('- ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>•</button>
+                </div>
+              )}
+              {/* Content */}
               <textarea
                 ref={contentRef}
                 className="flex-1 w-full p-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-800 bg-white resize-y min-h-[200px] text-base"
                 value={editingContent}
-                onChange={e => setEditingContent(e.target.value)}
+                onChange={handleContentChange}
                 placeholder="Write your notes here..."
-                style={{ fontFamily: 'Lexend, sans-serif' }}
+                style={{ fontFamily: 'Kumbh Sans, sans-serif' }}
               />
-            ) : (
-              <div
-                className="prose prose-blue max-w-none text-gray-900"
-                style={{ fontFamily: 'Lexend, sans-serif' }}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(editingContent) }}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400 italic text-lg" style={{ fontFamily: 'Lexend, sans-serif' }}>
-            Select or create a page to begin.
-          </div>
-        )}
-      </main>
-    </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400 italic text-lg" style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>
+              Select or create a page to begin.
+            </div>
+          )}
+        </main>
+      </div>
+    </>
   );
 };
 
