@@ -15,27 +15,149 @@ import {
 } from 'firebase/firestore';
 import {
   getAuth,
-  signInAnonymously,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
 
+// Extend Window interface for recaptchaVerifier
+declare global {
+  interface Window {
+    recaptchaVerifier?: any;
+  }
+}
+
 // --- Firebase Config ---
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase only once
 if (!getApps().length) {
-  initializeApp(firebaseConfig);
+  const app = initializeApp(firebaseConfig);
+  if (typeof window !== 'undefined') {
+    // Only initialize analytics in the browser
+    try {
+      // Dynamically import getAnalytics to avoid SSR issues
+      import('firebase/analytics').then(({ getAnalytics }) => {
+        getAnalytics(app);
+      });
+    } catch (e) {
+      // Analytics not supported or failed to load
+    }
+  }
 }
 const db = getFirestore();
 const auth = getAuth();
+
+// --- Auth Providers ---
+const googleProvider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider('microsoft.com');
+
+// --- Auth UI ---
+const AuthUI: React.FC<{ onPhoneSent: (confirmationResult: any) => void }> = ({ onPhoneSent }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleEmailSignIn = async () => {
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const handleMicrosoftSignIn = async () => {
+    setError(null);
+    try {
+      await signInWithPopup(auth, microsoftProvider);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const handlePhoneSend = async () => {
+    setError(null);
+    try {
+      if (!window.recaptchaVerifier) {
+        // @ts-ignore
+        window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', { size: 'invisible' }, auth);
+      }
+      const appVerifier = window.recaptchaVerifier;
+      const result = await signInWithPhoneNumber(auth, phone, appVerifier);
+      setConfirmationResult(result);
+      onPhoneSent(result);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  const handlePhoneVerify = async () => {
+    setError(null);
+    try {
+      if (confirmationResult) {
+        await confirmationResult.confirm(code);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+
+  return (
+    <div className="max-w-sm mx-auto mt-12 p-6 bg-white rounded shadow border flex flex-col gap-4">
+      <h2 className="text-lg font-bold mb-2">Sign in to Vault Notes</h2>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {/* Email/Password */}
+      <div className="flex flex-col gap-2">
+        <input className="border p-2 rounded" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+        <input className="border p-2 rounded" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+        <button className="bg-blue-600 text-white rounded px-4 py-2 mt-1" onClick={handleEmailSignIn}>Sign in with Email</button>
+      </div>
+      <div className="flex flex-col gap-2">
+        <button className="bg-red-500 text-white rounded px-4 py-2" onClick={handleGoogleSignIn}>Sign in with Google</button>
+        <button className="bg-blue-800 text-white rounded px-4 py-2" onClick={handleMicrosoftSignIn}>Sign in with Microsoft</button>
+      </div>
+      {/* Phone */}
+      <div className="flex flex-col gap-2">
+        <input className="border p-2 rounded" type="tel" placeholder="Phone (+1234567890)" value={phone} onChange={e => setPhone(e.target.value)} />
+        {!confirmationResult ? (
+          <button className="bg-green-600 text-white rounded px-4 py-2" onClick={handlePhoneSend}>Send Code</button>
+        ) : (
+          <>
+            <input className="border p-2 rounded" type="text" placeholder="Verification code" value={code} onChange={e => setCode(e.target.value)} />
+            <button className="bg-green-700 text-white rounded px-4 py-2" onClick={handlePhoneVerify}>Verify Code</button>
+          </>
+        )}
+        <div id="recaptcha-container"></div>
+      </div>
+    </div>
+  );
+};
 
 // --- Types ---
 type Note = {
@@ -186,22 +308,24 @@ const NoteEditor: React.FC<{
 const App: React.FC = () => {
   // Auth state
   const [user, setUser] = useState<UserInfo | null>(null);
-  // Notes state
+  const [fbUser, setFbUser] = useState<FirebaseUser | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorValue, setEditorValue] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [phoneConfirmation, setPhoneConfirmation] = useState<any>(null);
 
-  // --- Auth: Anonymous sign-in and user label assignment ---
+  // --- Auth: Listen for sign-in ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, fbUser => {
+      setFbUser(fbUser);
       if (fbUser) {
         // Assign User A/B based on UID sort order (for demo)
         const label: 'User A' | 'User B' = fbUser.uid < 'm' ? 'User A' : 'User B';
         setUser({ uid: fbUser.uid, label });
       } else {
-        signInAnonymously(auth);
+        setUser(null);
       }
     });
     return () => unsubscribe();
@@ -293,6 +417,10 @@ const App: React.FC = () => {
   }, [editingNote]);
 
   // --- Layout ---
+  if (!fbUser) {
+    return <AuthUI onPhoneSent={setPhoneConfirmation} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="w-full px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between shadow-sm">
