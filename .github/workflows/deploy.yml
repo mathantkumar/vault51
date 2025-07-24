@@ -1,16 +1,16 @@
-name: Deploy to GitHub Pages
+name: Deploy to gh pages
 
 on:
   push:
     branches:
-      - main # Or 'master', or whatever your primary development branch is
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout 🛎️
+    - name: Checkout 
       uses: actions/checkout@v4
 
     - name: Setup Node.js
@@ -18,7 +18,7 @@ jobs:
       with:
         node-version: '24' 
 
-    - name: Install dependencies 📦
+    - name: Install dependencies 
       run: npm ci # Use npm ci for faster installs in CI environments
 
     - name: Run deploy script 🚀
