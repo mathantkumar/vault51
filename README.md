@@ -2,14 +2,14 @@
 ## Features
 
 * Sign out
-* *Unified Search*
+* *Unified search*
 * Web responsive
 * Sub pages 
 * AI integration
 
 # 🐞Bugs
 
-* **Rich Text Editing Options:** 
+* *Rich text editing* 
 
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
