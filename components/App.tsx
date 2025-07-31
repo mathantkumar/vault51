@@ -23,6 +23,7 @@ import {
   RecaptchaVerifier,
   onAuthStateChanged,
   User as FirebaseUser,
+  signOut
 } from 'firebase/auth';
 import Head from 'next/head';
 
