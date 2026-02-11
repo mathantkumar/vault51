@@ -40,8 +40,8 @@ const THEMES: Theme[] = [
     paleBg: 'bg-purple-50',
   },
   {
-    name: 'Pastel Lilac',
-    accent: 'lilac',
+    name: 'Pastel Indigo',
+    accent: 'indigo',
     accentHex: '#C5A3FF', // Light lilac purple
     accentBg: 'bg-indigo-300',
     accentBorder: 'border-indigo-200',
@@ -59,7 +59,7 @@ const THEMES: Theme[] = [
   },
   {
     name: 'Pastel Coral',
-    accent: 'coral',
+    accent: 'red',
     accentHex: '#FFB6B0', // Soft coral
     accentBg: 'bg-red-300',
     accentBorder: 'border-red-200',
@@ -103,8 +103,8 @@ const THEMES: Theme[] = [
     paleBg: 'bg-teal-50',
   },
 ];
-const THEME_KEY = 'notionlite_theme';
-const STORAGE_KEY = 'notionlite_pages';
+const THEME_KEY = process.env.NEXT_PUBLIC_THEME_KEY || 'notionlite_theme';
+const STORAGE_KEY = process.env.NEXT_PUBLIC_STORAGE_KEY || 'notionlite_pages';
 function loadPages(): Page[] { try { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : []; } catch { return []; } }
 function savePages(pages: Page[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(pages)); }
 function loadTheme(): Theme { const name = localStorage.getItem(THEME_KEY); return THEMES.find(t => t.name === name) || THEMES[0]; }
@@ -240,43 +240,38 @@ const NotionLite: React.FC = () => {
       }, 0);
     }
   }
-  function insertList(type: 'ul' | 'ol') {
+  function applyTextFormat(before: string, after: string, selected: string) {
     const ref = contentRef.current;
-    let value = editingContent;
-    let selectionStart = ref ? ref.selectionStart : value.length;
-    let selectionEnd = ref ? ref.selectionEnd : value.length;
-    const selected = value.substring(selectionStart, selectionEnd) || 'List item';
-    const prefix = type === 'ul' ? '- ' : '1. ';
-    const lines = selected.split('\n').map(line => prefix + line).join('\n');
-    const newValue = value.substring(0, selectionStart) + lines + value.substring(selectionEnd);
-    setEditingContent(newValue);
-    setPages(pages => pages.map(p => p.id === activeId ? { ...p, content: newValue, title: editingTitle } : p));
-    if (ref) {
-      setTimeout(() => {
-        ref.selectionStart = ref.selectionEnd = selectionStart + lines.length;
-        ref.focus();
-      }, 0);
-    }
-  }
-  function insertHighlight(color: string) {
-    // Use custom markdown: ==color:highlighted text==
-    const ref = contentRef.current;
-    let value = editingContent;
-    let selectionStart = ref ? ref.selectionStart : value.length;
-    let selectionEnd = ref ? ref.selectionEnd : value.length;
-    const selected = value.substring(selectionStart, selectionEnd) || 'highlight';
-    const before = `==${color}:`;
-    const after = '==';
+    const value = editingContent;
+    const selectionStart = ref ? ref.selectionStart : value.length;
+    const selectionEnd = ref ? ref.selectionEnd : value.length;
     const newValue = value.substring(0, selectionStart) + before + selected + after + value.substring(selectionEnd);
-    setEditingContent(newValue);
     setPages(pages => pages.map(p => p.id === activeId ? { ...p, content: newValue, title: editingTitle } : p));
-    setShowHighlightPalette(false);
     if (ref) {
       setTimeout(() => {
         ref.selectionStart = ref.selectionEnd = selectionStart + before.length + selected.length + after.length;
         ref.focus();
       }, 0);
     }
+  }
+  function insertList(type: 'ul' | 'ol') {
+    const ref = contentRef.current;
+    const value = editingContent;
+    const selectionStart = ref ? ref.selectionStart : value.length;
+    const selectionEnd = ref ? ref.selectionEnd : value.length;
+    const selected = value.substring(selectionStart, selectionEnd) || 'List item';
+    const prefix = type === 'ul' ? '- ' : '1. ';
+    const lines = selected.split('\n').map(line => prefix + line).join('\n');
+    applyTextFormat('', '', lines.substring(prefix.length * selected.split('\n').length));
+  }
+  function insertHighlight(color: string) {
+    const ref = contentRef.current;
+    const value = editingContent;
+    const selectionStart = ref ? ref.selectionStart : value.length;
+    const selectionEnd = ref ? ref.selectionEnd : value.length;
+    const selected = value.substring(selectionStart, selectionEnd) || 'highlight';
+    applyTextFormat(`==${color}:`, '==', selected);
+    setShowHighlightPalette(false);
   }
   
   function handleThemeChange(next: Theme) { setTheme(next); }

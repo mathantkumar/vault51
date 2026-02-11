@@ -117,28 +117,40 @@ const AuthUI: React.FC<{ onPhoneSent: (confirmationResult: any) => void }> = ({ 
 
   const handleEmailSignIn = async () => {
     setError(null);
+    if (!auth) {
+      setError('Authentication not available');
+      return;
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (e: any) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'An error occurred');
     }
   };
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    if (!auth) {
+      setError('Authentication not available');
+      return;
+    }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (e: any) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'An error occurred');
     }
   };
 
   const handleMicrosoftSignIn = async () => {
     setError(null);
+    if (!auth) {
+      setError('Authentication not available');
+      return;
+    }
     try {
       await signInWithPopup(auth, microsoftProvider);
     } catch (e: any) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'An error occurred');
     }
   };
 
@@ -158,7 +170,7 @@ const AuthUI: React.FC<{ onPhoneSent: (confirmationResult: any) => void }> = ({ 
       setConfirmationResult(result);
       onPhoneSent(result);
     } catch (e: any) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'An error occurred');
     }
   };
 
@@ -169,7 +181,7 @@ const AuthUI: React.FC<{ onPhoneSent: (confirmationResult: any) => void }> = ({ 
         await confirmationResult.confirm(code);
       }
     } catch (e: any) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'An error occurred');
     }
   };
 
