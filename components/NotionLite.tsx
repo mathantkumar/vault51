@@ -278,23 +278,7 @@ const NotionLite: React.FC = () => {
       }, 0);
     }
   }
-  // --- Enhanced Markdown Render ---
-  function renderMarkdown(md: string): string {
-    let html = md
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold mt-4 mb-2">$1</h1>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-      .replace(/==([a-z]+):(.*?)==/gim, (m, color, text) => `<mark class="${HIGHLIGHT_COLORS.find(c => c.code === color)?.class || 'bg-yellow-200'}">${text}</mark>`)
-      .replace(/^\s*1\. (.*$)/gim, '<li class="list-decimal">$1</li>')
-      .replace(/^\s*\- (.*$)/gim, '<li>$1</li>');
-    // Wrap consecutive <li> in <ul> or <ol>
-    html = html.replace(/(<li class=\"list-decimal\">[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ol class="list-decimal pl-6 my-2">${match.replace(/<br\/>/g, '')}</ol>`);
-    html = html.replace(/(<li>[^<]*<\/li>(?:<br\/>)*?)+/g, match => `<ul class="list-disc pl-6 my-2">${match.replace(/<br\/>/g, '')}</ul>`);
-    html = html.replace(/\n/g, '<br/>');
-    return html;
-  }
+  
   function handleThemeChange(next: Theme) { setTheme(next); }
   function handleSignOut() { window.location.reload(); }
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -371,26 +355,26 @@ const NotionLite: React.FC = () => {
               {/* Toolbar */}
               {isEditing && (
                 <div className="flex gap-2 mb-2 flex-wrap">
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bold" onClick={() => insertAtCursor('**', '**')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>B</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 italic`} title="Italic" onClick={() => insertAtCursor('*', '*')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>I</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-bold`} title="H1" onClick={() => insertAtCursor('# ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H1</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-semibold`} title="H2" onClick={() => insertAtCursor('## ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H2</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700 font-medium`} title="H3" onClick={() => insertAtCursor('### ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H3</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bullet" onClick={() => insertAtCursor('- ', '', 'content')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>•</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Numbered List" onClick={() => insertList('ol')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>1.</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Bullet List" onClick={() => insertList('ul')} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>•</button>
-                  <button className={`px-2 py-1 rounded ${theme.paleBg} hover:${theme.accentBg} hover:text-white text-gray-700`} title="Highlight" onClick={() => setShowHighlightPalette(true)} style={{ fontFamily: 'Kumbh Sans, sans-serif' }}>H</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="Bold" onClick={() => insertAtCursor('**', '**')}>B</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white italic transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="Italic" onClick={() => insertAtCursor('*', '*')}>I</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white font-bold transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="H1" onClick={() => insertAtCursor('# ', '', 'content')}>H1</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white font-semibold transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="H2" onClick={() => insertAtCursor('## ', '', 'content')}>H2</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white font-medium transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="H3" onClick={() => insertAtCursor('### ', '', 'content')}>H3</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="Bullet" onClick={() => insertAtCursor('- ', '', 'content')}>•</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="Numbered List" onClick={() => insertList('ol')}>1.</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="Bullet List" onClick={() => insertList('ul')}>•</button>
+                  <button className="px-2 py-1 rounded text-gray-700 hover:text-white transition-colors" style={{ fontFamily: 'Kumbh Sans, sans-serif', backgroundColor: theme.accentHex + '20', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '40'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.accentHex + '20'} title="Highlight" onClick={() => setShowHighlightPalette(true)}>H</button>
                 </div>
               )}
               {/* Highlight Palette */}
               {showHighlightPalette && (
-                <div className="flex flex-wrap gap-2 p-2 rounded-md bg-gray-100 border border-gray-300 mt-2">
+                <div className="flex flex-wrap gap-2 p-2 rounded-md border border-gray-300 mt-2" style={{ backgroundColor: theme.paleBg }}>
                   {HIGHLIGHT_COLORS.map(color => (
                     <button
                       key={color.name}
-                      className={`w-6 h-6 rounded-full border-2 ${color.class} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${color.code}-400`}
+                      className={`w-6 h-6 rounded-full border-2 ${color.class} focus:outline-none focus:ring-2 focus:ring-offset-2 transition`}
                       onClick={() => insertHighlight(color.code)}
-                      style={{ borderColor: color.name === 'Yellow' ? '#FDFD96' : undefined }}
+                      style={{ borderColor: theme.accentHex }}
                       aria-label={color.name}
                     />
                   ))}

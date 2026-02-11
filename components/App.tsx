@@ -39,17 +39,17 @@ const LEXEND_FONT_URL = 'https://fonts.googleapis.com/css2?family=Lexend:wght@40
 
 // --- Firebase Config ---
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
 };
 
 // Initialize Firebase only once
-if (!getApps().length) {
+if (!getApps().length && firebaseConfig.projectId) {
   const app = initializeApp(firebaseConfig);
   if (typeof window !== 'undefined') {
     // Only initialize analytics in the browser
@@ -63,8 +63,8 @@ if (!getApps().length) {
     }
   }
 }
-const db = getFirestore();
-const auth = getAuth();
+const db = getApps().length > 0 ? getFirestore() : null;
+const auth = getApps().length > 0 ? getAuth() : null;
 
 // --- Auth Providers ---
 const googleProvider = new GoogleAuthProvider();
@@ -144,6 +144,10 @@ const AuthUI: React.FC<{ onPhoneSent: (confirmationResult: any) => void }> = ({ 
 
   const handlePhoneSend = async () => {
     setError(null);
+    if (!auth) {
+      setError('Authentication not available');
+      return;
+    }
     try {
       if (!window.recaptchaVerifier) {
         // @ts-ignore
@@ -365,6 +369,7 @@ const App: React.FC = () => {
 
   // --- Auth: Listen for sign-in ---
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, fbUser => {
       setFbUser(fbUser);
       if (fbUser) {
@@ -380,6 +385,7 @@ const App: React.FC = () => {
 
   // --- Firestore: Real-time notes sync ---
   useEffect(() => {
+    if (!db) return;
     const q = query(collection(db, 'notes'), orderBy('timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, snapshot => {
       const notesArr: Note[] = snapshot.docs.map(docSnap => {
@@ -413,7 +419,7 @@ const App: React.FC = () => {
 
   // --- Create new note ---
   const handleNew = useCallback(async () => {
-    if (!user) return;
+    if (!user || !db) return;
     setIsSaving(true);
     const docRef = await addDoc(collection(db, 'notes'), {
       content: '',
@@ -435,6 +441,7 @@ const App: React.FC = () => {
 
   // --- Delete note ---
   const handleDelete = useCallback(async (id: string) => {
+    if (!db) return;
     await deleteDoc(doc(db, 'notes', id));
   }, []);
 
@@ -447,7 +454,7 @@ const App: React.FC = () => {
 
   // --- Save note ---
   const handleSave = useCallback(async () => {
-    if (!editingNote || !user) return;
+    if (!editingNote || !user || !db) return;
     setIsSaving(true);
     await updateDoc(doc(db, 'notes', editingNote.id), {
       content: editorValue,
